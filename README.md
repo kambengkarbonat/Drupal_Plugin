@@ -20,7 +20,7 @@ Installations for Drupal version 7.x.x and above
 - Upload or copy those file and folder into your Drupal root folder
 
 - (Skip this if your Drupal is not hosted in UNIX environment). 
-Please ensure the file permission is correct. It's recommended to CHMOD to 644
+Please ensure the file permission is correct. It's recommended to CHMOD to 777
 
 - Login to your Drupal Admin, then go to Modules and activate the `Commerce MOLPay` plugin.
 
