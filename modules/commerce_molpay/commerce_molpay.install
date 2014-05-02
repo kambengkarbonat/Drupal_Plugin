@@ -1,0 +1,140 @@
+<?php
+
+    /**
+     * @file
+     * Requirements check and defining database table schema.
+     */
+
+    /**
+     * Implementation of hook_requirements().
+     *
+     * Check if cURL library is installed.
+     */
+    function commerce_molpay_requirements($phase) {
+        // Skip the requirements check if SimpleTest is installed to avoid multiple cURL rows.
+        if (module_exists('simpletest')) {
+            return;
+        }
+
+        $t = get_t();
+
+        $has_curl = function_exists('curl_init');
+
+        $requirements['commerce_molpay_curl'] = array(
+            'title' => $t('cURL'),
+            'value' => $has_curl ? $t('Enabled') : $t('Not found'),
+        );
+
+        if (!$has_curl) {
+            $requirements['commerce_molpay_curl'] += array(
+                'severity' => REQUIREMENT_ERROR,
+                'description' => $t("molpay requires the PHP <a href='!curl_url'>cURL</a> library.", array('!curl_url' => 'http://php.net/manual/en/curl.setup.php')),
+            );
+        }
+
+        return $requirements;
+    }
+
+    /**
+     * Implements hook_schema().
+     */
+    function commerce_molpay_schema() {
+        $schema = array();
+
+        $schema['commerce_molpay'] = array(
+          'description' => 'Stores processed transactions.',
+                'fields' => array(
+                    'orderid' => array(
+                        'description' => 'Order ID.',
+                        'type' => 'varchar',
+                        'length' => 32,
+                        'not null' => TRUE,
+                    ),
+                    'amount' => array(
+                        'description' => 'Payment amount.',
+                        'type' => 'int',
+                        'not null' => TRUE,
+                        'default' => 0,
+                    ),
+                    'cur' => array(
+                        'description' => 'Currency.',
+                        'type' => 'varchar',
+                        'length' => 3,
+                        'not null' => TRUE,
+                    ),
+                    'country' => array(
+                        'description' => 'Country.',
+                        'type' => 'varchar',
+                        'length' => 2,
+                        'not null' => TRUE,
+                    ),
+                    'bill_desc' => array(
+                        'description' => 'Bill description.',
+                        'type' => 'varchar',
+                        'length' => 100,
+                        'not null' => TRUE,
+                    ),
+                    'bill_name' => array(
+                        'description' => 'Customer name.',
+                        'type' => 'varchar',
+                        'length' => 100,
+                        'not null' => TRUE,
+                    ),
+                    'bill_email' => array(
+                        'description' => 'Customer email.',
+                        'type' => 'varchar',
+                        'length' => 100,
+                        'not null' => TRUE,
+                    ),
+                    'tranID' => array(
+                        'description' => 'Transaction ID for tracking purpose.',
+                        'type' => 'varchar',
+                        'length' => 100,
+                        'null' => TRUE,
+                    ),
+                    'appcode' => array(
+                        'description' => 'Bank approval code.',
+                        'type' => 'varchar',
+                        'length' => 100,
+                        'null' => TRUE,
+                    ),
+                    'status' => array(
+                        'description' => 'Status of transaction.',
+                        'type' => 'int',
+                        'length' => 100,
+                        'null' => TRUE,
+                    ),
+                    'paydate' => array(
+                        'description' => 'Date and time of the transaction.',
+                        'type' => 'varchar',
+                        'length' => 100,
+                        'null' => TRUE,
+                    ),
+                    'channel' => array(
+                        'description' => 'Payment method.',
+                        'type' => 'varchar',
+                        'length' => 100,
+                        'null' => TRUE,
+                    ),
+                ),
+        );
+
+        return $schema;
+    }
+
+    /**
+     * Implements hook_uninstall().
+     */
+    function commerce_molpay_uninstall() {
+        // Perform some clean on uninstall.
+        drupal_session_start();
+        if (isset($_SESSION['commerce_molpay'])) {
+            unset($_SESSION['commerce_molpay']);
+        }
+
+        variable_del('commerce_molpay_merchant_ID');
+        variable_del('commerce_molpay_merchant_vkey');
+        variable_del('commerce_molpay_enabled_payment_methods');
+        variable_del('commerce_molpay_cron_requery_enabled');
+        variable_del('commerce_molpay_cron_requery_limit');
+    }
