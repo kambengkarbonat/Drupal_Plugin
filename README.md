@@ -1,7 +1,7 @@
 MOLPay Drupal Plugin
 ==================
 
-MOLPay Plugin for Drupal Shopping Cart developed by MOLPay technical team.
+MOLPay Plugin for Drupal Shopping Cart developed by MOLPay R&D team.
 
 
 Notes
