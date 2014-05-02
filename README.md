@@ -1,7 +1,7 @@
 MOLPay Drupal Plugin
 ==================
 
-MOLPay Plugin for Drupal Shopping Cart develop by MOLPay technical team.
+MOLPay Plugin for Drupal Shopping Cart developed by MOLPay technical team.
 
 
 Notes
@@ -29,7 +29,7 @@ Please ensure the file permission is correct. It's recommended to CHMOD to 777
     1. Merchant ID: Provide your MOLPay Merchant ID for this field.
     2. Merchant VKey: Login to MOLPay merchant admin site, and refer to your profile to
 
-- Save Configuration. You’re Done!
+- Save Configuration. Youï¿½re Done!
 
 
 Contribution
