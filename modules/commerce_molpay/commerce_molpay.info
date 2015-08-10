@@ -4,7 +4,7 @@ core        = "7.x"
 version     = VERSION
 package     = "Commerce (contrib)"
 
-configure = admin/commerce/config/Molpay
+configure = admin/commerce/config/molpay
 
 dependencies[] = commerce
 dependencies[] = commerce_ui
