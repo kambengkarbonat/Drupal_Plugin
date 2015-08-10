@@ -8,11 +8,15 @@
     /**
      * Implements hook_init().
      */
-    function commerce_molpay_init() {
-        if (module_exists('libraries')) {
+
+    function commerce_molpay_init() 
+	{
+        if (module_exists('commerce_molpay')) 
+		{
             // Include molpay class.
             $path = libraries_get_path('molpay');
-            if ($path) {
+            if ($path) 
+			{
                 include_once $path . '/molpay.class.php';
             }
         }
@@ -37,11 +41,18 @@
         $items = array();
 
         $items['admin/commerce/config/molpay'] = array(
-            'title' => 'molpay settings',
+            'title' => 'MOLPay Settings',
             'description' => 'Configure molpay settings.',
             'page callback' => 'drupal_get_form',
             'page arguments' => array('commerce_molpay_admin_form'),
             'access arguments' => array('administer commerce molpay'),
+        );
+		
+		$items['admin/commerce/callback'] = array(
+			'title' => 'callback',
+			'page callback' => 'commerce_molpay_callback',
+			'access callback' => TRUE,
+			'type'=> MENU_CALLBACK
         );
 
         return $items;
@@ -91,6 +102,16 @@
      * @todo Add configuration to select available payment methods and currency.
      */
     function commerce_molpay_admin_form($form, &$form_state) {
+		
+		if(!class_exists('molpay'))
+		{
+			$path = libraries_get_path('molpay');
+            if ($path) 
+			{
+                include_once $path . '/molpay.class.php';
+            }
+		}
+		
         $form['merchant'] = array(
           '#type' => 'fieldset',
           '#title' => t('Merchant information'),
@@ -124,7 +145,7 @@
           '#size' => 50,
           '#maxlength' => 34,
           '#required' => TRUE,
-          '#default_value' => variable_get('commerce_molpay_merchant_key'),
+          '#default_value' => variable_get('commerce_molpay_merchant_vkey'),
           '#description' => t('Merchant\'s private verify key.'),
         );
 
@@ -295,6 +316,16 @@
     }
 
     function commerce_molpay_order_form($form, &$form_state, $order, $settings) {
+		
+		if(!class_exists('molpay'))
+		{
+			$path = libraries_get_path('molpay');
+            if ($path) 
+			{
+                include_once $path . '/molpay.class.php';
+            }
+		}
+		
         // Add Javascript to automatically post to molpay, and hide the submit button to prevent multiple submission.
         drupal_add_js('jQuery(function ($) { $(\'#commerce-molpay-redirect-form .form-submit\').hide(); $(\'#commerce-molpay-redirect-form\').submit(); } );', 'inline');
 
@@ -344,7 +375,6 @@
                 $form[$name] = array('#type' => 'hidden', '#value' => $value);
             }
         }
-
             $commerce_molpay_nid = db_insert('commerce_molpay')
                 ->fields(array(
                     'orderid' => $order->order_id,
@@ -369,6 +399,16 @@
      * Implements hook_redirect_form_validate.
      */
     function commerce_molpay_redirect_form_validate($order, $payment_method) {
+		
+		if(!class_exists('molpay'))
+		{
+			$path = libraries_get_path('molpay');
+            if ($path) 
+			{
+                include_once $path . '/molpay.class.php';
+            }
+		}
+		
         // Receive response from molpay server.
         $molpay = new molpay(variable_get('commerce_molpay_merchant_ID'));
         $response = $molpay->getResponse();
@@ -386,7 +426,7 @@
 
             commerce_molpay_transaction($payment_method, $order, $response['data'] + $molpay_session_temp);
         }
-
+		$molpay->ipn();
         return TRUE;
     }
 
@@ -444,6 +484,16 @@
      * @return array Available payment methods.
      */
     function _commerce_molpay_get_payment_methods($sort = TRUE) {
+		
+		if(!class_exists('molpay'))
+		{
+			$path = libraries_get_path('molpay');
+            if ($path) 
+			{
+                include_once $path . '/molpay.class.php';
+            }
+		}
+		
         $payment_methods = molpay::$payment_methods;
         $payment_methods_formatted = array();
         if ($payment_methods) {
@@ -465,3 +515,101 @@
 
         return $payment_methods_formatted;
     }
+
+	function commerce_molpay_callback()
+	{
+		if(!class_exists('molpay'))
+		{
+			$path = libraries_get_path('molpay');
+            if ($path) 
+			{
+                include_once $path . '/molpay.class.php';
+            }
+		}
+		
+		if(isset($_POST['nbcb']) && !empty($_POST['nbcb']))
+		{
+			$vkey 			=variable_get('commerce_molpay_merchant_vkey'); //Replace xxxxxxxxxx ​with your MOLPay Verify Key
+			$_POST['treq']	=1; 
+			
+			/********************************
+			*Don't change below parameters
+			********************************/
+			$nbcb 		=$_POST['nbcb'];
+			$tranID 	=$_POST['tranID'];
+			$orderid 	=$_POST['orderid'];
+			$status 	=$_POST['status'];
+			$domain 	=$_POST['domain'];
+			$amount 	=$_POST['amount'];
+			$currency 	=$_POST['currency'];
+			$appcode 	=$_POST['appcode'];
+			$paydate 	=$_POST['paydate'];
+			$skey 		=$_POST['skey'];
+			$channel 	=$_POST['channel'];
+			
+			/***********************************************************
+			* To verify the data integrity sending by MOLPay
+			************************************************************/
+			$key0 = md5( $tranID.$orderid.$status.$domain.$amount.$currency );
+			$key1 = md5( $paydate.$domain.$key0.$appcode.$vkey );
+			
+			if($skey != $key1) $status = ­1; // Invalid transaction
+			
+			db_update('commerce_molpay')
+			->fields
+			(
+				[
+					'tranID' 	=> $tranID,
+					'appcode' 	=> $appcode,
+					'status' 	=> $status,
+					'paydate' 	=> $paydate,
+					'channel' 	=> $channel,
+				]
+			)
+			->condition('orderid', $orderid)
+			->execute();
+			
+			if ( $status == "00" ) 
+			{	
+				db_update('commerce_order')
+				->fields
+				(
+					[
+						'status' => 'completed'
+					]
+				)
+				->condition('order_id', $orderid)
+				->execute();
+			}
+			if ( $status == "11" )
+			{
+				db_update('commerce_order')
+				->fields
+				(
+					[
+						'status' => 'canceled'
+					]
+				)
+				->condition('order_id', $orderid)
+				->execute();
+			}
+			if ( $status == "22" )
+			{
+				db_update('commerce_order')
+				->fields
+				(
+					[
+						'status' => 'pending'
+					]
+				)
+				->condition('order_id', $orderid)
+				->execute();
+			}
+			
+			if ($nbcb == 1)
+			{
+				echo "CBTOKEN:MPSTATOK";
+				exit;
+			}
+		}
+	}
