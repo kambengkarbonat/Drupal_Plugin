@@ -52,7 +52,8 @@
                     ),
                     'amount' => array(
                         'description' => 'Payment amount.',
-                        'type' => 'int',
+                        'type' => 'varchar',
+                        'length' => 100,
                         'not null' => TRUE,
                         'default' => 0,
                     ),
@@ -100,7 +101,7 @@
                     ),
                     'status' => array(
                         'description' => 'Status of transaction.',
-                        'type' => 'int',
+                        'type' => 'varchar',
                         'length' => 100,
                         'null' => TRUE,
                     ),
