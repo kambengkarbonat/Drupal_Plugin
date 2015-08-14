@@ -268,5 +268,29 @@ class MOLPay {
 
       return $result;
     }*/
-
+	
+	public function ipn()
+	{
+		/***********************************************************
+		* Snippet code in purple​color is the enhancement required
+		* by merchant to add into their return script in order to
+		* implement backend acknowledge method for IPN
+		************************************************************/
+		while ( list($k,$v) = each($_POST) ) 
+		{
+			$postData[]= $k."=".$v;
+		}
+		$postdata 	=implode("&",$postData);
+		$url 		="https://www.onlinepayment.com.my/MOLPay/API/chkstat/returnipn.php";
+		$ch 		=curl_init();
+		curl_setopt($ch, CURLOPT_POST , 1 );
+		curl_setopt($ch, CURLOPT_POSTFIELDS , $postdata );
+		curl_setopt($ch, CURLOPT_URL , $url );
+		curl_setopt($ch, CURLOPT_HEADER , 1 );
+		curl_setopt($ch, CURLINFO_HEADER_OUT , TRUE );
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER , 1 );
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER , FALSE);
+		$result = curl_exec( $ch );
+		curl_close( $ch );
+	}
 }
